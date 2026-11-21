@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pokhara Drone Flights</title>
+  <title>Road Surface Nepal Flights</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -21,9 +21,8 @@
 body { margin: 0; padding: 16px; background: var(--bg); color: var(--ink); }
 h1 { font-size: 20px; margin: 0; }
 h2 { font-size: 17px; margin: 0; }
-header p { color: var(--muted); margin: 2px 0 16px; }
+header > p { color: var(--muted); margin: 2px 0 12px; }
 main { display: grid; grid-template-columns: minmax(220px, 280px) 1fr; gap: 16px; align-items: start; }
-@media (max-width: 760px) { main { grid-template-columns: 1fr; } }
 section { display: grid; gap: 10px; min-width: 0; }
 
 nav { display: flex; flex-direction: column; gap: 4px; }
@@ -64,12 +63,23 @@ td.bad { color: var(--poor); font-weight: 600; }
 .chip { font: 12px ui-monospace, "IBM Plex Mono", monospace; background: var(--hover); border: 1px solid var(--line);
   border-radius: 4px; padding: 1px 6px; overflow-wrap: anywhere; }
 .leaflet-div-icon { background: none; border: 0; }
+#summary { margin: 6px 0 16px; }
+#summary .total { margin: 0 0 6px; }
+#summary .days { display: flex; flex-wrap: wrap; gap: 6px; }
+#summary .days span { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; }
+#summary .days b { color: var(--ink); font-weight: 600; }
+@media (max-width: 760px) {
+  main { grid-template-columns: 1fr; }
+  nav { flex-direction: row; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; }
+  nav button { flex: 0 0 auto; min-width: 190px; scroll-snap-align: start; }
+  #map { height: 380px; }
+}
   </style>
 </head>
 <body>
   <header>
-    <h1 id="heading">Pokhara drone flights</h1>
-    <p>Orthophoto readiness per flight. Red on the map marks overlap gaps.</p>
+    <h1 id="heading">Road surface Nepal flights</h1>
+    <div id="summary"></div>
   </header>
   <main>
     <nav id="sites" aria-label="Sites"></nav>
@@ -95,25 +105,42 @@ let layer = L.layerGroup().addTo(map);
 
 const $ = id => document.getElementById(id);
 const verdictClass = v => v.split(" ")[0];
+const isFlight = q => Number(q.images) >= 10; // smaller sets are stray photos, not flights
+// A site is only as good as its worst flight; an unusable flight makes the site Poor.
 const siteVerdict = s => {
-  const v = s.qa.map(q => q.verdict).filter(v => v in RANK).sort((a, b) => RANK[a] - RANK[b]);
+  const v = s.qa.filter(isFlight).map(q => (q.verdict in RANK ? q.verdict : "Poor")).sort((a, b) => RANK[a] - RANK[b]);
   return v[0] || "Not for ODM";
 };
 const pill = v => `<span class="pill ${verdictClass(v)}">${v}</span>`;
 const text = (el, value) => { el.textContent = value; return el; };
 
+function summarise(sites) {
+  const flights = sites.flatMap(s => s.qa).filter(isFlight);
+  const count = (list, v) => list.filter(q => q.verdict === v).length;
+  const byDay = new Map();
+  flights.forEach(q => byDay.set(q.start.slice(0, 10), [...(byDay.get(q.start.slice(0, 10)) || []), q]));
+  const day = d => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  $("summary").innerHTML =
+    `<p class="total"><b>${count(flights, "Good")} of ${flights.length} flights are good for an orthophoto.</b> ` +
+    `${count(flights, "Usable")} usable, ${count(flights, "Poor")} poor, ${count(flights, "Not for ODM")} not usable.</p>` +
+    `<div class="days">${[...byDay].map(([d, qs]) =>
+      `<span><b>${day(d)}</b> ${count(qs, "Good")} of ${qs.length} good</span>`).join("")}</div>`;
+}
+
 fetch("data.json").then(r => r.json()).then(data => {
   const days = data.sites.flatMap(s => s.qa.map(q => q.start)).sort();
   const fmt = d => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-  text($("heading"), `Pokhara drone flights, ${fmt(days[0])} to ${fmt(days[days.length - 1])}`);
+  text($("heading"), `Road surface Nepal flights, ${fmt(days[0])} to ${fmt(days[days.length - 1])}`);
   data.sites.forEach((site, i) => {
     const b = document.createElement("button");
     b.innerHTML = `<span><span class="name"></span><small></small></span>${pill(siteVerdict(site))}`;
     text(b.querySelector(".name"), site.label);
-    text(b.querySelector("small"), `${site.folders.join(", ")} · ${site.images} images`);
+    const real = site.qa.filter(isFlight);
+    text(b.querySelector("small"), `${real.filter(q => q.verdict === "Good").length} of ${real.length} flight${real.length === 1 ? "" : "s"} good`);
     b.onclick = () => show(data, i);
     $("sites").append(b);
   });
+  summarise(data.sites);
   show(data, 0);
 });
 
@@ -128,14 +155,13 @@ function show(data, i) {
   const cell = v => (v === undefined || v === null || v === "" ? "" : v);
 
   $("flights").innerHTML =
-    "<thead><tr><th>Flight</th><th>Verdict</th><th>Images</th><th>Max height above takeoff m</th>" +
-    "<th>Gimbal °</th><th>cm/px</th><th>Overlap</th><th>Gaps</th></tr></thead><tbody>" +
+    "<thead><tr><th>Flight</th><th>Verdict</th><th>Gimbal °</th><th title='Above the takeoff point'>Max height m</th>" +
+    "<th>Overlap</th><th>Gaps</th></tr></thead><tbody>" +
     flights.map(q => {
       const f = Number(q.flight);
       return `<tr data-f="${f}"><td><span class="num" style="background:${color(f)}">${num.get(f)}</span> ${q.start.slice(11, 16)}</td>` +
-        `<td>${pill(q.verdict)}</td><td>${q.images}</td>` +
+        `<td>${pill(q.verdict)}</td><td>${q.pitch_deg_median ? Math.abs(q.pitch_deg_median) : ""}</td>` +
         `<td class="${Number(q.height_m_max) > 80 ? "bad" : ""}">${q.height_m_max ? Math.round(q.height_m_max) : ""}</td>` +
-        `<td>${q.pitch_deg_median ? Math.abs(q.pitch_deg_median) : ""}</td><td>${cell(q.gsd_cm_median)}</td>` +
         `<td>${q.forward_overlap_median ? q.forward_overlap_median + "%" : ""}</td><td>${cell(q.gaps)}</td></tr>`;
     }).join("") + "</tbody>";
 
@@ -193,11 +219,7 @@ function show(data, i) {
     fact("Drone", q.drone);
     fact("Camera", `${q.focal_35mm} mm`);
     fact("Photos used", `${q.mapping} of ${q.images}`);
-    if (q.height_m_max) fact("Max height", `${Math.round(q.height_m_max)} m`);
-    if (q.pitch_deg_median) fact("Gimbal", `${Math.abs(q.pitch_deg_median)}°`);
     if (q.gsd_cm_median) fact("Ground resolution", `${q.gsd_cm_median} cm/px`);
-    if (q.forward_overlap_median) fact("Overlap", `${q.forward_overlap_median}%`);
-    if (q.gaps !== undefined && q.gaps !== "") fact("Gaps", String(q.gaps));
   };
   document.querySelectorAll("#flights tbody tr").forEach(r => { r.onclick = () => select(Number(r.dataset.f)); });
   if (flights.length) select(Number(flights[0].flight));
