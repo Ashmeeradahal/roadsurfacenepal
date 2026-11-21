@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pokhara Drone Flights</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+:root {
+  --bg: #ffffff; --ink: #111111; --muted: #6b6b6b; --line: #e4e4e4; --hover: #f5f5f5;
+  --good: #15803d; --warn: #b45309; --poor: #dc2626; --aside: #9ca3af;
+  font: 14px/1.45 "IBM Plex Sans", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #111111; --ink: #f2f2f2; --muted: #a3a3a3; --line: #2b2b2b; --hover: #1c1c1c;
+          --good: #4ade80; --warn: #fbbf24; --poor: #f87171; --aside: #737373; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 16px; background: var(--bg); color: var(--ink); }
+h1 { font-size: 20px; margin: 0; }
+h2 { font-size: 17px; margin: 0; }
+header p { color: var(--muted); margin: 2px 0 16px; }
+main { display: grid; grid-template-columns: minmax(220px, 280px) 1fr; gap: 16px; align-items: start; }
+@media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+section { display: grid; gap: 10px; min-width: 0; }
+
+nav { display: flex; flex-direction: column; gap: 4px; }
+nav button { display: flex; justify-content: space-between; align-items: center; gap: 8px; text-align: left;
+  font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; cursor: pointer; }
+nav button:hover { border-color: var(--ink); }
+nav button[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 3px 0 0 var(--ink); }
+nav small { display: block; color: var(--muted); font-size: 12px; }
+
+.pill { font-size: 11px; font-weight: 600; padding: 1px 8px; border: 1px solid currentColor; border-radius: 999px; white-space: nowrap; }
+.Good { color: var(--good); } .Usable { color: var(--warn); } .Poor { color: var(--poor); } .Not { color: var(--aside); }
+
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; font-size: 12px; }
+tbody tr { cursor: pointer; }
+tbody tr:hover, tbody tr.on { background: var(--hover); }
+tbody tr.on td { box-shadow: inset 0 -2px 0 var(--ink); }
+td.bad { color: var(--poor); font-weight: 600; }
+.num { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  color: #fff; font-size: 12px; font-weight: 600; border: 2px solid #fff; }
+
+#map { height: 520px; border: 1px solid var(--line); border-radius: 6px; }
+#map .leaflet-tile-pane { filter: grayscale(0.85) brightness(1.06) contrast(0.85); }
+.legend { display: flex; gap: 12px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+.legend .gap { background: var(--poor); } .legend .aside { background: var(--aside); }
+#detail { border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 4px; }
+#detail .head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+#detail .meta { color: var(--muted); font-size: 12px; }
+#detail .reason { margin: 2px 0 6px; font-size: 15px; }
+.facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 16px;
+  border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }
+.facts .wide { grid-column: span 2; }
+.facts dt { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.facts dd { margin: 2px 0 0; font-variant-numeric: tabular-nums; }
+.chip { font: 12px ui-monospace, "IBM Plex Mono", monospace; background: var(--hover); border: 1px solid var(--line);
+  border-radius: 4px; padding: 1px 6px; overflow-wrap: anywhere; }
+.leaflet-div-icon { background: none; border: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="heading">Pokhara drone flights</h1>
+    <p>Orthophoto readiness per flight. Red on the map marks overlap gaps.</p>
+  </header>
+  <main>
+    <nav id="sites" aria-label="Sites"></nav>
+    <section>
+      <h2 id="title"></h2>
+      <div class="scroll"><table id="flights"></table></div>
+      <div id="map"></div>
+      <div class="legend"><span><i class="gap"></i>gap</span><span><i class="aside"></i>set aside</span></div>
+      <div id="detail" hidden></div>
+    </section>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+const COLORS = ["#2563eb", "#ea580c", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
+const RANK = { Poor: 0, Usable: 1, Good: 2 };
+
+const map = L.map("map", { preferCanvas: true });
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+}).addTo(map);
+let layer = L.layerGroup().addTo(map);
+
+const $ = id => document.getElementById(id);
+const verdictClass = v => v.split(" ")[0];
+const siteVerdict = s => {
+  const v = s.qa.map(q => q.verdict).filter(v => v in RANK).sort((a, b) => RANK[a] - RANK[b]);
+  return v[0] || "Not for ODM";
+};
+const pill = v => `<span class="pill ${verdictClass(v)}">${v}</span>`;
+const text = (el, value) => { el.textContent = value; return el; };
+
+fetch("data.json").then(r => r.json()).then(data => {
+  const days = data.sites.flatMap(s => s.qa.map(q => q.start)).sort();
+  const fmt = d => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  text($("heading"), `Pokhara drone flights, ${fmt(days[0])} to ${fmt(days[days.length - 1])}`);
+  data.sites.forEach((site, i) => {
+    const b = document.createElement("button");
+    b.innerHTML = `<span><span class="name"></span><small></small></span>${pill(siteVerdict(site))}`;
+    text(b.querySelector(".name"), site.label);
+    text(b.querySelector("small"), `${site.folders.join(", ")} · ${site.images} images`);
+    b.onclick = () => show(data, i);
+    $("sites").append(b);
+  });
+  show(data, 0);
+});
+
+function show(data, i) {
+  const site = data.sites[i];
+  document.querySelectorAll("#sites button").forEach((b, j) => b.setAttribute("aria-pressed", i === j));
+  text($("title"), site.label);
+
+  const flights = site.qa.slice().sort((a, b) => a.start.localeCompare(b.start));
+  const num = new Map(flights.map((q, k) => [Number(q.flight), k + 1]));
+  const color = f => COLORS[(num.get(f) - 1) % COLORS.length];
+  const cell = v => (v === undefined || v === null || v === "" ? "" : v);
+
+  $("flights").innerHTML =
+    "<thead><tr><th>Flight</th><th>Verdict</th><th>Images</th><th>Max height above takeoff m</th>" +
+    "<th>Gimbal °</th><th>cm/px</th><th>Overlap</th><th>Gaps</th></tr></thead><tbody>" +
+    flights.map(q => {
+      const f = Number(q.flight);
+      return `<tr data-f="${f}"><td><span class="num" style="background:${color(f)}">${num.get(f)}</span> ${q.start.slice(11, 16)}</td>` +
+        `<td>${pill(q.verdict)}</td><td>${q.images}</td>` +
+        `<td class="${Number(q.height_m_max) > 80 ? "bad" : ""}">${q.height_m_max ? Math.round(q.height_m_max) : ""}</td>` +
+        `<td>${q.pitch_deg_median ? Math.abs(q.pitch_deg_median) : ""}</td><td>${cell(q.gsd_cm_median)}</td>` +
+        `<td>${q.forward_overlap_median ? q.forward_overlap_median + "%" : ""}</td><td>${cell(q.gaps)}</td></tr>`;
+    }).join("") + "</tbody>";
+
+  map.removeLayer(layer);
+  layer = L.layerGroup().addTo(map);
+  const groups = new Map();
+  const points = data.points.filter(p => p.s === site.site);
+  flights.forEach(q => {
+    const f = Number(q.flight);
+    const g = L.layerGroup().addTo(layer);
+    const shots = points.filter(p => p.f === f);
+    const mapping = shots.filter(p => p.k === "m");
+    if (mapping.length > 1) L.polyline(mapping.map(p => [p.la, p.lo]), { color: color(f), weight: 2, opacity: 0.6 }).addTo(g);
+    shots.forEach(p => {
+      const aside = p.k !== "m";
+      L.circleMarker([p.la, p.lo], { radius: aside ? 3 : 4, color: aside ? "#9ca3af" : color(f), fillOpacity: 0.9, weight: 1 })
+        .bindTooltip(`${p.n} ${p.t}<br>${p.h ?? ""} m, ${p.p !== undefined ? Math.abs(p.p) : ""}°, ${p.g ?? ""} cm/px` +
+          (p.ov !== undefined ? `, overlap ${p.ov}%` : "") + (aside ? "<br>set aside" : ""))
+        .addTo(g);
+    });
+    site.gaps.filter(x => x.flight === f).forEach(x =>
+      L.polyline([x.a, x.b], { color: "#dc2626", weight: 5 }).bindTooltip(`gap: ${x.ov}% overlap`).addTo(g));
+    if (shots.length) {
+      L.marker([shots[0].la, shots[0].lo], {
+        icon: L.divIcon({ html: `<span class="num" style="background:${color(f)}">${num.get(f)}</span>`, iconSize: [24, 24], iconAnchor: [12, 28] }),
+      }).addTo(g);
+    }
+    groups.set(f, g);
+  });
+  map.fitBounds(L.latLngBounds(points.map(p => [p.la, p.lo])), { padding: [30, 30] });
+
+  const select = f => {
+    groups.forEach((g, key) => g.eachLayer(l => l.setStyle?.({ opacity: key === f ? 1 : 0.15, fillOpacity: key === f ? 0.9 : 0.1 })));
+    document.querySelectorAll("#flights tbody tr").forEach(r => r.classList.toggle("on", Number(r.dataset.f) === f));
+    const q = flights.find(x => Number(x.flight) === f);
+    $("detail").hidden = false;
+    $("detail").innerHTML = `<div class="head"><span class="num" style="background:${color(f)}">${num.get(f)}</span>` +
+      `<b>Flight ${num.get(f)}</b>${pill(q.verdict)}<span class="meta"></span></div><p class="reason"></p><dl class="facts"></dl>`;
+    text($("detail").querySelector(".meta"), `${q.start.slice(0, 10)}, ${q.start.slice(11, 16)} to ${q.end.slice(11, 16)}`);
+    text($("detail").querySelector(".reason"), q.reason);
+    const facts = $("detail").querySelector(".facts");
+    const fact = (label, ...values) => {
+      const box = document.createElement("div");
+      if (label === "Folder") box.className = "wide";
+      const dd = document.createElement("dd");
+      dd.append(...values);
+      box.append(text(document.createElement("dt"), label), dd);
+      facts.append(box);
+    };
+    const chip = name => text(Object.assign(document.createElement("code"), { className: "chip" }), name);
+    q.folders.split("; ").forEach(entry => {
+      const [, name, count] = entry.match(/^(.*) \((\d+)\)$/);
+      fact("Folder", chip(name), ` ${count} photos`);
+    });
+    fact("Drone", q.drone);
+    fact("Camera", `${q.focal_35mm} mm`);
+    fact("Photos used", `${q.mapping} of ${q.images}`);
+    if (q.height_m_max) fact("Max height", `${Math.round(q.height_m_max)} m`);
+    if (q.pitch_deg_median) fact("Gimbal", `${Math.abs(q.pitch_deg_median)}°`);
+    if (q.gsd_cm_median) fact("Ground resolution", `${q.gsd_cm_median} cm/px`);
+    if (q.forward_overlap_median) fact("Overlap", `${q.forward_overlap_median}%`);
+    if (q.gaps !== undefined && q.gaps !== "") fact("Gaps", String(q.gaps));
+  };
+  document.querySelectorAll("#flights tbody tr").forEach(r => { r.onclick = () => select(Number(r.dataset.f)); });
+  if (flights.length) select(Number(flights[0].flight));
+}
+  </script>
+</body>
+</html>
