@@ -9,92 +9,141 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
   <style>
 :root {
-  --bg: #ffffff; --ink: #111111; --muted: #6b6b6b; --line: #e4e4e4; --hover: #f5f5f5;
-  --good: #15803d; --warn: #b45309; --poor: #dc2626; --aside: #9ca3af;
-  font: 14px/1.45 "IBM Plex Sans", system-ui, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root { --bg: #111111; --ink: #f2f2f2; --muted: #a3a3a3; --line: #2b2b2b; --hover: #1c1c1c;
-          --good: #4ade80; --warn: #fbbf24; --poor: #f87171; --aside: #737373; color-scheme: dark; }
+  --bg: #f7f7f5; --card: #ffffff; --ink: #18181b; --muted: #71717a; --line: #e7e5e4; --hover: #f4f4f2;
+  --good: #15803d; --good-bg: #ecfdf3; --warn: #b45309; --warn-bg: #fff7ed; --poor: #dc2626; --poor-bg: #fef2f2; --aside: #9ca3af;
+  font: 14px/1.5 "IBM Plex Sans", system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
-body { margin: 0; padding: 16px; background: var(--bg); color: var(--ink); }
-h1 { font-size: 20px; margin: 0; }
-h2 { font-size: 17px; margin: 0; }
-header > p { color: var(--muted); margin: 2px 0 12px; }
-main { display: grid; grid-template-columns: minmax(220px, 280px) 1fr; gap: 16px; align-items: start; }
-section { display: grid; gap: 10px; min-width: 0; }
+body { margin: 0; background: var(--bg); color: var(--ink); }
+.page { max-width: 1440px; margin: 0 auto; padding: 24px; }
+h1 { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -.01em; }
+h2 { font-size: 18px; font-weight: 600; margin: 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+main { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
+section { display: grid; gap: 14px; min-width: 0; }
 
-nav { display: flex; flex-direction: column; gap: 4px; }
-nav button { display: flex; justify-content: space-between; align-items: center; gap: 8px; text-align: left;
-  font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; cursor: pointer; }
-nav button:hover { border-color: var(--ink); }
-nav button[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 3px 0 0 var(--ink); }
-nav small { display: block; color: var(--muted); font-size: 12px; }
+#summary { margin: 14px 0 22px; display: grid; gap: 12px; }
+.stats { display: flex; flex-wrap: wrap; gap: 12px; }
+.stat { padding: 12px 16px; min-width: 170px; }
+.stat b { display: block; font-size: 24px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 12.5px; }
+.stat.Good b { color: var(--good); } .stat.Poor b { color: var(--warn); } .stat.Rejected b { color: var(--poor); }
+.days { display: flex; flex-wrap: wrap; gap: 6px; }
+.days span { font-size: 12px; color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+.days b { color: var(--ink); font-weight: 600; }
 
-.pill { font-size: 11px; font-weight: 600; padding: 1px 8px; border: 1px solid currentColor; border-radius: 999px; white-space: nowrap; }
-.Good { color: var(--good); } .Usable { color: var(--warn); } .Poor { color: var(--poor); } .Not { color: var(--aside); }
+nav { position: sticky; top: 16px; overflow: hidden; }
+.listhead { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+nav h3 { margin: 0; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.sort { display: inline-flex; background: var(--hover); border-radius: 7px; padding: 2px; }
+.sort button { font: inherit; font-size: 12px; padding: 2px 10px; border: 0; border-radius: 5px; background: none; color: var(--muted); cursor: pointer; }
+.sort button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+#sites { display: flex; flex-direction: column; max-height: calc(100vh - 120px); overflow-y: auto; }
+#sites button { display: flex; justify-content: space-between; align-items: center; gap: 8px; text-align: left; font: inherit; color: inherit;
+  background: none; border: 0; border-bottom: 1px solid var(--line); padding: 10px 14px; cursor: pointer; }
+#sites button:last-child { border-bottom: 0; }
+#sites button:hover { background: var(--hover); }
+#sites button[aria-pressed="true"] { background: var(--hover); box-shadow: inset 3px 0 0 var(--ink); }
+#sites .name { font-weight: 500; }
+#sites small { display: block; color: var(--muted); font-size: 12px; }
+#sites .idx { display: inline-block; min-width: 20px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
+.pill { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.pill.Good { color: var(--good); background: var(--good-bg); } .pill.Poor { color: var(--warn); background: var(--warn-bg); } .pill.Rejected { color: var(--poor); background: var(--poor-bg); }
+.bad { color: var(--poor); font-weight: 600; }
+
+.sitehead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
-th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-th { color: var(--muted); font-weight: 500; font-size: 12px; }
+th, td { text-align: left; padding: 9px 16px; white-space: nowrap; }
+th { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--line); }
+td { border-top: 1px solid var(--line); }
+tbody tr:first-child td { border-top: 0; }
+th.n, td.n { text-align: right; }
+td.muted { color: var(--muted); }
 tbody tr { cursor: pointer; }
 tbody tr:hover, tbody tr.on { background: var(--hover); }
-tbody tr.on td { box-shadow: inset 0 -2px 0 var(--ink); }
-td.bad { color: var(--poor); font-weight: 600; }
-.num { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
-  color: #fff; font-size: 12px; font-weight: 600; border: 2px solid #fff; }
+tbody tr.on td:first-child { box-shadow: inset 3px 0 0 var(--ink); }
+.num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: #fff; font-size: 12px; font-weight: 600; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.08); }
 
-#map { height: 520px; border: 1px solid var(--line); border-radius: 6px; }
+.mapwrap { position: relative; overflow: hidden; }
+#map { height: 500px; }
 #map .leaflet-tile-pane { filter: grayscale(0.85) brightness(1.06) contrast(0.85); }
-.legend { display: flex; gap: 12px; font-size: 12px; color: var(--muted); }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+.legend { position: absolute; left: 12px; bottom: 12px; z-index: 500; display: flex; gap: 12px; font-size: 12px; color: var(--muted);
+  background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: 0; }
 .legend .gap { background: var(--poor); } .legend .aside { background: var(--aside); }
-#detail { border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 4px; }
+
+#detail { padding: 16px 18px; display: grid; gap: 10px; }
 #detail .head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 #detail .meta { color: var(--muted); font-size: 12px; }
-#detail .reason { margin: 2px 0 6px; font-size: 15px; }
-.facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 16px;
-  border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }
+#detail .reason { margin: 0; font-size: 15px; }
+.telenote { margin: 0; font-size: 13px; color: var(--warn); background: var(--warn-bg); border: 1px solid #fed7aa; border-radius: 8px; padding: 7px 12px; }
+#summary .telenote { justify-self: start; }
+.tele { margin-left: 6px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--warn); background: var(--warn-bg); border-radius: 4px; padding: 1px 5px; vertical-align: 2px; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.checks li { display: grid; grid-template-columns: 70px 1fr auto; align-items: center; gap: 12px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.checks li.head { display: block; border: 0; padding: 0; color: var(--muted); font-size: 13px; }
+.checks .state { font-size: 11px; font-weight: 600; text-align: center; border-radius: 999px; padding: 2px 0; }
+.checks .pass .state { color: var(--good); background: var(--good-bg); } .checks .fail .state { color: var(--poor); background: var(--poor-bg); } .checks .wait .state { color: var(--muted); background: var(--hover); }
+.checks .fail { border-color: #fecaca; }
+.checks .val { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
+.checks .fail .val { color: var(--poor); font-weight: 600; }
+.facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px 18px; padding-top: 12px; border-top: 1px solid var(--line); }
 .facts .wide { grid-column: span 2; }
-.facts dt { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.facts dt { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .facts dd { margin: 2px 0 0; font-variant-numeric: tabular-nums; }
-.chip { font: 12px ui-monospace, "IBM Plex Mono", monospace; background: var(--hover); border: 1px solid var(--line);
-  border-radius: 4px; padding: 1px 6px; overflow-wrap: anywhere; }
+.chip { font: 12px ui-monospace, "IBM Plex Mono", monospace; background: var(--hover); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; overflow-wrap: anywhere; }
 .leaflet-div-icon { background: none; border: 0; }
-#summary { margin: 6px 0 16px; }
-#summary .total { margin: 0 0 6px; }
-#summary .days { display: flex; flex-wrap: wrap; gap: 6px; }
-#summary .days span { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; }
-#summary .days b { color: var(--ink); font-weight: 600; }
 @media (max-width: 760px) {
+  .page { padding: 16px; }
+  h1 { font-size: 19px; text-wrap: balance; }
   main { grid-template-columns: 1fr; }
-  nav { flex-direction: row; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; }
-  nav button { flex: 0 0 auto; min-width: 190px; scroll-snap-align: start; }
-  #map { height: 380px; }
+  nav { position: static; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat { min-width: 0; padding: 10px 12px; }
+  .stat b { font-size: 20px; }
+  .stat span { font-size: 12px; display: block; line-height: 1.3; }
+  #sites { max-height: 280px; }
+  table { width: 100%; font-size: 12px; }
+  th, td { padding: 8px 6px; }
+  th { font-size: 10px; letter-spacing: .02em; }
+  th:first-child, td:first-child { padding-left: 10px; }
+  th:last-child, td:last-child { padding-right: 10px; }
+  .t { display: none; }
+  #map { height: 340px; }
+  #detail { padding: 14px; }
+  .checks li { grid-template-columns: 48px 1fr; gap: 2px 8px; padding: 7px 10px; }
+  .checks .val { grid-column: 2; }
 }
   </style>
 </head>
 <body>
+<div class="page">
   <header>
     <h1 id="heading">Road surface Nepal flights</h1>
     <div id="summary"></div>
   </header>
   <main>
-    <nav id="sites" aria-label="Sites"></nav>
+    <nav class="card" aria-label="Sites"><div class="listhead"><h3 id="sitecount"></h3><span class="sort" role="group" aria-label="Sort sites"><button type="button" data-sort="date" aria-pressed="true">Date</button><button type="button" data-sort="name" aria-pressed="false">Name</button></span></div><div id="sites"></div></nav>
     <section>
-      <h2 id="title"></h2>
-      <div class="scroll"><table id="flights"></table></div>
-      <div id="map"></div>
-      <div class="legend"><span><i class="gap"></i>gap</span><span><i class="aside"></i>set aside</span></div>
-      <div id="detail" hidden></div>
+      <div class="sitehead"><h2 id="title"></h2></div>
+      <div class="scroll card"><table id="flights"></table></div>
+      <div class="mapwrap card"><div id="map"></div>
+        <div class="legend"><span><i class="gap"></i>gap</span><span><i class="aside"></i>set aside</span></div></div>
+      <div id="detail" class="card" hidden></div>
     </section>
   </main>
+</div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
 const COLORS = ["#2563eb", "#ea580c", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
-const RANK = { Poor: 0, Usable: 1, Good: 2 };
+const RANK = { Rejected: 0, Poor: 1, Good: 2 };
+// Rule limits: a value outside them is shown in red.
+const LIMITS = { gimbal: 80, overlap: 70, height: 75, smallGaps: 2 };
+const has = v => v !== undefined && v !== null && v !== "";
+const gapsOk = q => Number(q.gaps) <= LIMITS.smallGaps && Number(q.big_gaps || 0) === 0;
+const bad = cond => (cond ? "bad" : "");
 
 const map = L.map("map", { preferCanvas: true });
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -103,26 +152,64 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 let layer = L.layerGroup().addTo(map);
 
+const tele = q => Number(q.focal_35mm) >= 50;
 const $ = id => document.getElementById(id);
 const verdictClass = v => v.split(" ")[0];
 const isFlight = q => Number(q.images) >= 10; // smaller sets are stray photos, not flights
-// A site is only as good as its worst flight; an unusable flight makes the site Poor.
+// One line per rule: state is "pass", "fail" or "wait" (not known yet).
+function checklist(q, list) {
+  const pitch = has(q.pitch_deg_median) ? Math.abs(Number(q.pitch_deg_median)) : null;
+  const tilted = Number(q.tilted_photos || 0);
+  const dngOnly = /DNG/.test(q.reason);
+  const rows = [
+    ["Camera pointing down (gimbal 80 to 90°)",
+      pitch === null ? "wait" : pitch >= LIMITS.gimbal && Number(q.pitch_spread90_deg || 0) <= 5 ? "pass" : "fail",
+      pitch === null ? "" : `${pitch}°` + (tilted ? `, ${tilted} tilted photo${tilted > 1 ? "s" : ""} left out` : "")],
+    ["Overlap 70% or more",
+      has(q.forward_overlap_median) ? (Number(q.forward_overlap_median) >= LIMITS.overlap ? "pass" : "fail") : "fail",
+      has(q.forward_overlap_median) ? `${q.forward_overlap_median}%` : "not a mapping flight"],
+    ["At most 2 small gaps between photos",
+      has(q.gaps) ? (gapsOk(q) ? "pass" : "fail") : "fail",
+      has(q.gaps) ? `${q.gaps} gap${Number(q.gaps) === 1 ? "" : "s"}` + (Number(q.big_gaps) ? `, ${q.big_gaps} with no shared ground` : "") : "not a mapping flight"],
+    ["Height about 70 m (75 m at most)",
+      has(q.height_m_max) ? (Math.round(Number(q.height_m_max)) <= LIMITS.height ? "pass" : "fail") : "wait",
+      has(q.height_m_max) ? `${Math.round(q.height_m_max)} m` : ""],
+    ["JPG photos", dngOnly ? "fail" : "pass", dngOnly ? "DNG only" : ""],
+  ];
+  const head = document.createElement("li");
+  head.className = "head";
+  const passed = rows.filter(r => r[1] === "pass").length;
+  text(head, passed === rows.length ? "All checks pass: this flight goes to processing." : `${passed} of ${rows.length} checks pass. All must pass for the flight to be processed.`);
+  list.append(head);
+  const mark = { pass: "Pass", fail: "Fix", wait: "Pending" };
+  rows.forEach(([label, state, value]) => {
+    const li = document.createElement("li");
+    li.className = state;
+    li.append(text(Object.assign(document.createElement("span"), { className: "state" }), mark[state]),
+      text(document.createElement("span"), label),
+      text(Object.assign(document.createElement("span"), { className: "val" }), value));
+    list.append(li);
+  });
+}
+
+// A site is only as good as its worst flight.
 const siteVerdict = s => {
-  const v = s.qa.filter(isFlight).map(q => (q.verdict in RANK ? q.verdict : "Poor")).sort((a, b) => RANK[a] - RANK[b]);
-  return v[0] || "Not for ODM";
+  const v = s.qa.filter(isFlight).map(q => q.status).sort((a, b) => RANK[a] - RANK[b]);
+  return v[0] || "Rejected";
 };
 const pill = v => `<span class="pill ${verdictClass(v)}">${v}</span>`;
 const text = (el, value) => { el.textContent = value; return el; };
 
 function summarise(sites) {
   const flights = sites.flatMap(s => s.qa).filter(isFlight);
-  const count = (list, v) => list.filter(q => q.verdict === v).length;
+  const count = (list, v) => list.filter(q => q.status === v).length;
   const byDay = new Map();
   flights.forEach(q => byDay.set(q.start.slice(0, 10), [...(byDay.get(q.start.slice(0, 10)) || []), q]));
   const day = d => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const stat = (v, label, note) => `<div class="stat card ${v}"><b>${count(flights, v)}</b><span>${label} · ${note}</span></div>`;
   $("summary").innerHTML =
-    `<p class="total"><b>${count(flights, "Good")} of ${flights.length} flights are good for an orthophoto.</b> ` +
-    `${count(flights, "Usable")} usable, ${count(flights, "Poor")} poor, ${count(flights, "Not for ODM")} not usable.</p>` +
+    `<div class="stats">${stat("Good", "accepted", `of ${flights.length} flights`)}${stat("Poor", "poor", "fly again with corrections")}${stat("Rejected", "rejected", "fly again")}</div>` +
+    `<p class="telenote">${flights.filter(tele).length} of ${flights.length} flights used the 70 mm telephoto camera. Use the main 28 mm camera for mapping.</p>` +
     `<div class="days">${[...byDay].map(([d, qs]) =>
       `<span><b>${day(d)}</b> ${count(qs, "Good")} of ${qs.length} good</span>`).join("")}</div>`;
 }
@@ -131,22 +218,38 @@ fetch("data.json").then(r => r.json()).then(data => {
   const days = data.sites.flatMap(s => s.qa.map(q => q.start)).sort();
   const fmt = d => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
   text($("heading"), `Road surface Nepal flights, ${fmt(days[0])} to ${fmt(days[days.length - 1])}`);
-  data.sites.forEach((site, i) => {
-    const b = document.createElement("button");
-    b.innerHTML = `<span><span class="name"></span><small></small></span>${pill(siteVerdict(site))}`;
-    text(b.querySelector(".name"), site.label);
-    const real = site.qa.filter(isFlight);
-    text(b.querySelector("small"), `${real.filter(q => q.verdict === "Good").length} of ${real.length} flight${real.length === 1 ? "" : "s"} good`);
-    b.onclick = () => show(data, i);
-    $("sites").append(b);
-  });
+  const renderList = mode => {
+    const order = data.sites.map((s, i) => i);
+    if (mode === "name") order.sort((a, b) => data.sites[a].label.localeCompare(data.sites[b].label));
+    $("sites").replaceChildren();
+    order.forEach((i, k) => {
+      const site = data.sites[i];
+      const b = document.createElement("button");
+      b.dataset.i = i;
+      b.innerHTML = `<span><span class="idx">${k + 1}</span><span class="name"></span><small></small></span>${pill(siteVerdict(site))}`;
+      text(b.querySelector(".name"), site.label);
+      const real = site.qa.filter(isFlight);
+      text(b.querySelector("small"), `${real.filter(q => q.status === "Good").length} of ${real.length} flight${real.length === 1 ? "" : "s"} good`);
+      b.onclick = () => show(data, i);
+      $("sites").append(b);
+    });
+    document.querySelectorAll(".sort button").forEach(b => b.setAttribute("aria-pressed", b.dataset.sort === mode));
+    if (current !== null) markSite(current);
+  };
+  document.querySelectorAll(".sort button").forEach(b => { b.onclick = () => renderList(b.dataset.sort); });
+  renderList("date");
+  text($("sitecount"), `${data.sites.length} sites`);
   summarise(data.sites);
   show(data, 0);
 });
 
+let current = null;
+const markSite = i => document.querySelectorAll("#sites button").forEach(b => b.setAttribute("aria-pressed", Number(b.dataset.i) === i));
+
 function show(data, i) {
   const site = data.sites[i];
-  document.querySelectorAll("#sites button").forEach((b, j) => b.setAttribute("aria-pressed", i === j));
+  current = i;
+  markSite(i);
   text($("title"), site.label);
 
   const flights = site.qa.slice().sort((a, b) => a.start.localeCompare(b.start));
@@ -154,15 +257,20 @@ function show(data, i) {
   const color = f => COLORS[(num.get(f) - 1) % COLORS.length];
   const cell = v => (v === undefined || v === null || v === "" ? "" : v);
 
+  const val = (v, unit) => (has(v) ? `${v}${unit}` : "–");
   $("flights").innerHTML =
-    "<thead><tr><th>Flight</th><th>Verdict</th><th>Gimbal °</th><th title='Above the takeoff point'>Max height m</th>" +
-    "<th>Overlap</th><th>Gaps</th></tr></thead><tbody>" +
+    "<thead><tr><th>Flight</th><th class='t'>Time</th><th>Verdict</th><th class='n'>Gimbal</th>" +
+    "<th class='n' title='Maximum height above the takeoff point'>Height</th><th class='n'>Overlap</th><th class='n'>Gaps</th></tr></thead><tbody>" +
     flights.map(q => {
       const f = Number(q.flight);
-      return `<tr data-f="${f}"><td><span class="num" style="background:${color(f)}">${num.get(f)}</span> ${q.start.slice(11, 16)}</td>` +
-        `<td>${pill(q.verdict)}</td><td>${q.pitch_deg_median ? Math.abs(q.pitch_deg_median) : ""}</td>` +
-        `<td class="${Number(q.height_m_max) > 80 ? "bad" : ""}">${q.height_m_max ? Math.round(q.height_m_max) : ""}</td>` +
-        `<td>${q.forward_overlap_median ? q.forward_overlap_median + "%" : ""}</td><td>${cell(q.gaps)}</td></tr>`;
+      const pitch = q.pitch_deg_median ? Math.abs(q.pitch_deg_median) : "";
+      const height = q.height_m_max ? Math.round(q.height_m_max) : "";
+      return `<tr data-f="${f}"><td><span class="num" style="background:${color(f)}">${num.get(f)}</span>${tele(q) ? '<span class="tele" title="70 mm telephoto camera">tele</span>' : ""}</td>` +
+        `<td class="muted t">${q.start.slice(11, 16)}</td><td>${pill(q.status)}</td>` +
+        `<td class="n ${bad(pitch !== "" && pitch < LIMITS.gimbal)}">${val(pitch, "°")}</td>` +
+        `<td class="n ${bad(height !== "" && height > LIMITS.height)}">${val(height, " m")}</td>` +
+        `<td class="n ${bad(has(q.forward_overlap_median) && Number(q.forward_overlap_median) < LIMITS.overlap)}">${val(q.forward_overlap_median, "%")}</td>` +
+        `<td class="n ${bad(has(q.gaps) && !gapsOk(q))}">${val(q.gaps, "")}</td></tr>`;
     }).join("") + "</tbody>";
 
   map.removeLayer(layer);
@@ -183,7 +291,7 @@ function show(data, i) {
         .addTo(g);
     });
     site.gaps.filter(x => x.flight === f).forEach(x =>
-      L.polyline([x.a, x.b], { color: "#dc2626", weight: 5 }).bindTooltip(`gap: ${x.ov}% overlap`).addTo(g));
+      L.polyline([x.a, x.b], { color: "#dc2626", weight: 5 }).bindTooltip(x.ties !== null && x.ties !== undefined ? `gap: ${x.ties} tie points` : `gap: ${x.ov}% overlap`).addTo(g));
     if (shots.length) {
       L.marker([shots[0].la, shots[0].lo], {
         icon: L.divIcon({ html: `<span class="num" style="background:${color(f)}">${num.get(f)}</span>`, iconSize: [24, 24], iconAnchor: [12, 28] }),
@@ -199,12 +307,13 @@ function show(data, i) {
     const q = flights.find(x => Number(x.flight) === f);
     $("detail").hidden = false;
     $("detail").innerHTML = `<div class="head"><span class="num" style="background:${color(f)}">${num.get(f)}</span>` +
-      `<b>Flight ${num.get(f)}</b>${pill(q.verdict)}<span class="meta"></span></div><p class="reason"></p><dl class="facts"></dl>`;
+      `<b>Flight ${num.get(f)}</b>${pill(q.status)}<span class="meta"></span></div><p class="reason"></p>${tele(q) ? `<p class="telenote">Taken with the 70 mm telephoto camera. Use the main 28 mm camera for mapping: select it in DJI Fly before starting the waypoint flight.</p>` : ""}<ul class="checks"></ul><dl class="facts"></dl>`;
     text($("detail").querySelector(".meta"), `${q.start.slice(0, 10)}, ${q.start.slice(11, 16)} to ${q.end.slice(11, 16)}`);
     text($("detail").querySelector(".reason"), q.reason);
     const facts = $("detail").querySelector(".facts");
     const fact = (label, ...values) => {
       const box = document.createElement("div");
+      if (typeof values[values.length - 1] === "boolean") box.classList.toggle("bad", values.pop());
       if (label === "Folder") box.className = "wide";
       const dd = document.createElement("dd");
       dd.append(...values);
@@ -217,9 +326,10 @@ function show(data, i) {
       fact("Folder", chip(name), ` ${count} photos`);
     });
     fact("Drone", q.drone);
-    fact("Camera", `${q.focal_35mm} mm`);
+    fact("Camera", `${q.focal_35mm} mm${tele(q) ? " telephoto" : ""}`);
     fact("Photos used", `${q.mapping} of ${q.images}`);
     if (q.gsd_cm_median) fact("Ground resolution", `${q.gsd_cm_median} cm/px`);
+    checklist(q, $("detail").querySelector(".checks"));
   };
   document.querySelectorAll("#flights tbody tr").forEach(r => { r.onclick = () => select(Number(r.dataset.f)); });
   if (flights.length) select(Number(flights[0].flight));
