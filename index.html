@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Road Surface Nepal Flights</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.7.1/dist/css/tabulator.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
   <style>
@@ -15,11 +16,13 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); }
-.page { max-width: 1440px; margin: 0 auto; padding: 24px; }
+.page { max-width: 1680px; margin: 0 auto; padding: 24px; }
 h1 { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -.01em; }
 h2 { font-size: 18px; font-weight: 600; margin: 0; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
-main { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
+main { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; align-items: start; }
+.left { display: grid; gap: 14px; min-width: 0; }
+.right { display: grid; gap: 10px; position: sticky; top: 16px; min-width: 0; }
 section { display: grid; gap: 14px; min-width: 0; }
 
 #summary { margin: 14px 0 22px; display: grid; gap: 12px; }
@@ -32,42 +35,31 @@ section { display: grid; gap: 14px; min-width: 0; }
 .days span { font-size: 12px; color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
 .days b { color: var(--ink); font-weight: 600; }
 
-nav { position: sticky; top: 16px; overflow: hidden; }
-.listhead { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); }
-nav h3 { margin: 0; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
-.sort { display: inline-flex; background: var(--hover); border-radius: 7px; padding: 2px; }
-.sort button { font: inherit; font-size: 12px; padding: 2px 10px; border: 0; border-radius: 5px; background: none; color: var(--muted); cursor: pointer; }
-.sort button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
-#sites { display: flex; flex-direction: column; max-height: calc(100vh - 120px); overflow-y: auto; }
-#sites button { display: flex; justify-content: space-between; align-items: center; gap: 8px; text-align: left; font: inherit; color: inherit;
-  background: none; border: 0; border-bottom: 1px solid var(--line); padding: 10px 14px; cursor: pointer; }
-#sites button:last-child { border-bottom: 0; }
-#sites button:hover { background: var(--hover); }
-#sites button[aria-pressed="true"] { background: var(--hover); box-shadow: inset 3px 0 0 var(--ink); }
-#sites .name { font-weight: 500; }
-#sites small { display: block; color: var(--muted); font-size: 12px; }
-#sites .idx { display: inline-block; min-width: 20px; color: var(--muted); font-variant-numeric: tabular-nums; }
-
 .pill { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
 .pill.Good { color: var(--good); background: var(--good-bg); } .pill.Poor { color: var(--warn); background: var(--warn-bg); } .pill.Rejected { color: var(--poor); background: var(--poor-bg); }
 .bad { color: var(--poor); font-weight: 600; }
 
 .sitehead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-.scroll { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
-th, td { text-align: left; padding: 9px 16px; white-space: nowrap; }
-th { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--line); }
-td { border-top: 1px solid var(--line); }
-tbody tr:first-child td { border-top: 0; }
-th.n, td.n { text-align: right; }
-td.muted { color: var(--muted); }
-tbody tr { cursor: pointer; }
-tbody tr:hover, tbody tr.on { background: var(--hover); }
-tbody tr.on td:first-child { box-shadow: inset 3px 0 0 var(--ink); }
+/* Tabulator, restyled to the page */
+#flights.tabulator { border: 1px solid var(--line); border-radius: 10px; background: var(--card); font: inherit; font-size: 13px; font-variant-numeric: tabular-nums; }
+#flights .tabulator-header { background: var(--card); border-bottom: 1px solid var(--line); color: var(--muted); }
+#flights .tabulator-header .tabulator-col { background: var(--card); border-right: 0; }
+#flights .tabulator-col-title { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+#flights .tabulator-col .tabulator-col-content { padding: 6px 8px; }
+#flights .tabulator-header-filter input, #flights .tabulator-header-filter select { font: inherit; font-size: 12px; text-transform: none; letter-spacing: 0; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); }
+#flights .tabulator-tableholder { background: var(--card); }
+#flights .tabulator-row { background: var(--card); border-bottom: 1px solid var(--line); cursor: pointer; }
+#flights .tabulator-row.tabulator-row-even { background: var(--card); }
+#flights .tabulator-row:hover { background: var(--hover); }
+#flights .tabulator-row.tabulator-selected { background: var(--hover); box-shadow: inset 3px 0 0 var(--ink); }
+#flights .tabulator-cell { border-right: 0; padding: 7px 8px; }
+#flights .tabulator-footer { background: var(--card); border-top: 1px solid var(--line); border-radius: 0 0 10px 10px; color: var(--muted); }
+#flights .tabulator-page { border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+#flights .tabulator-page.active { background: var(--ink); color: var(--card); }
 .num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: #fff; font-size: 12px; font-weight: 600; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.08); }
 
 .mapwrap { position: relative; overflow: hidden; }
-#map { height: 500px; }
+#map { height: calc(100vh - 80px); min-height: 420px; }
 #map .leaflet-tile-pane { filter: grayscale(0.85) brightness(1.06) contrast(0.85); }
 .legend { position: absolute; left: 12px; bottom: 12px; z-index: 500; display: flex; gap: 12px; font-size: 12px; color: var(--muted);
   background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; }
@@ -78,6 +70,10 @@ tbody tr.on td:first-child { box-shadow: inset 3px 0 0 var(--ink); }
 #detail .head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 #detail .meta { color: var(--muted); font-size: 12px; }
 #detail .reason { margin: 0; font-size: 15px; }
+.oambadge { margin-left: 6px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--good); background: var(--good-bg); border-radius: 4px; padding: 1px 5px; vertical-align: 2px; text-decoration: none; }
+.oam { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; }
+.oam img { width: 120px; max-width: 100%; height: 120px; object-fit: contain; border-radius: 4px; background: var(--hover); }
+.oam a { color: var(--ink); }
 .telenote { margin: 0; font-size: 13px; color: var(--warn); background: var(--warn-bg); border: 1px solid #fed7aa; border-radius: 8px; padding: 7px 12px; }
 #summary .telenote { justify-self: start; }
 .tele { margin-left: 6px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--warn); background: var(--warn-bg); border-radius: 4px; padding: 1px 5px; vertical-align: 2px; }
@@ -98,21 +94,15 @@ tbody tr.on td:first-child { box-shadow: inset 3px 0 0 var(--ink); }
 @media (max-width: 760px) {
   .page { padding: 16px; }
   h1 { font-size: 19px; text-wrap: balance; }
-  main { grid-template-columns: 1fr; }
-  nav { position: static; }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .stat { min-width: 0; padding: 10px 12px; }
   .stat b { font-size: 20px; }
   .stat span { font-size: 12px; display: block; line-height: 1.3; }
-  #sites { max-height: 280px; }
-  table { width: 100%; font-size: 12px; }
-  th, td { padding: 8px 6px; }
-  th { font-size: 10px; letter-spacing: .02em; }
-  th:first-child, td:first-child { padding-left: 10px; }
-  th:last-child, td:last-child { padding-right: 10px; }
-  .t { display: none; }
-  #map { height: 340px; }
+  main { grid-template-columns: 1fr; }
+  .right { position: static; order: -1; }
+  #map { height: 340px; min-height: 0; }
   #detail { padding: 14px; }
+  #flights .tabulator-cell { padding: 7px 8px; }
   .checks li { grid-template-columns: 48px 1fr; gap: 2px 8px; padding: 7px 10px; }
   .checks .val { grid-column: 2; }
 }
@@ -125,37 +115,45 @@ tbody tr.on td:first-child { box-shadow: inset 3px 0 0 var(--ink); }
     <div id="summary"></div>
   </header>
   <main>
-    <nav class="card" aria-label="Sites"><div class="listhead"><h3 id="sitecount"></h3><span class="sort" role="group" aria-label="Sort sites"><button type="button" data-sort="date" aria-pressed="true">Date</button><button type="button" data-sort="name" aria-pressed="false">Name</button></span></div><div id="sites"></div></nav>
-    <section>
+    <div class="left">
+      <div id="flights"></div>
+      <div id="detail" class="card" hidden></div>
+    </div>
+    <div class="right">
       <div class="sitehead"><h2 id="title"></h2></div>
-      <div class="scroll card"><table id="flights"></table></div>
       <div class="mapwrap card"><div id="map"></div>
         <div class="legend"><span><i class="gap"></i>gap</span><span><i class="aside"></i>set aside</span></div></div>
-      <div id="detail" class="card" hidden></div>
-    </section>
+    </div>
   </main>
 </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/tabulator-tables@6.7.1/dist/js/tabulator.min.js"></script>
   <script>
 const COLORS = ["#2563eb", "#ea580c", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
-const RANK = { Rejected: 0, Poor: 1, Good: 2 };
 // Rule limits: a value outside them is shown in red.
 const LIMITS = { gimbal: 80, overlap: 70, height: 75, smallGaps: 2 };
 const has = v => v !== undefined && v !== null && v !== "";
 const gapsOk = q => Number(q.gaps) <= LIMITS.smallGaps && Number(q.big_gaps || 0) === 0;
-const bad = cond => (cond ? "bad" : "");
+const tele = q => Number(q.focal_35mm) >= 50;
+const isFlight = q => Number(q.images) >= 10; // smaller sets are stray photos, not flights
+const OAM_BROWSE = id => `https://imagery.hotosm.org/browse?selected_id=${id}`;
+const OAM_TILES = id => `https://api.imagery.hotosm.org/raster/collections/openaerialmap/items/${id}/tiles/WebMercatorQuad/{z}/{x}/{y}.png?assets=visual`;
+const $ = id => document.getElementById(id);
+const text = (el, value) => { el.textContent = value; return el; };
+const pill = v => `<span class="pill ${v}">${v}</span>`;
+const day = d => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 
 const map = L.map("map", { preferCanvas: true });
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19,
+  maxZoom: 22,
+  maxNativeZoom: 19,
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 }).addTo(map);
+// Published orthophotos sit above the greyed base map and below the flight points.
+map.createPane("oam").style.zIndex = 250;
 let layer = L.layerGroup().addTo(map);
+let allPoints = [];
 
-const tele = q => Number(q.focal_35mm) >= 50;
-const $ = id => document.getElementById(id);
-const verdictClass = v => v.split(" ")[0];
-const isFlight = q => Number(q.images) >= 10; // smaller sets are stray photos, not flights
 // One line per rule: state is "pass", "fail" or "wait" (not known yet).
 function checklist(q, list) {
   const pitch = has(q.pitch_deg_median) ? Math.abs(Number(q.pitch_deg_median)) : null;
@@ -175,16 +173,16 @@ function checklist(q, list) {
       has(q.height_m_max) ? (Math.round(Number(q.height_m_max)) <= LIMITS.height ? "pass" : "fail") : "wait",
       has(q.height_m_max) ? `${Math.round(q.height_m_max)} m` : ""],
     ["JPG photos", dngOnly ? "fail" : "pass", dngOnly ? "DNG only" : ""],
+    ["Main 28 mm camera",
+      has(q.focal_35mm) ? (tele(q) ? "fail" : "pass") : "wait",
+      has(q.focal_35mm) ? `${q.focal_35mm} mm` : ""],
   ];
-  const head = document.createElement("li");
-  head.className = "head";
   const passed = rows.filter(r => r[1] === "pass").length;
-  text(head, passed === rows.length ? "All checks pass: this flight goes to processing." : `${passed} of ${rows.length} checks pass. All must pass for the flight to be processed.`);
-  list.append(head);
+  list.append(text(Object.assign(document.createElement("li"), { className: "head" }),
+    passed === rows.length ? "All checks pass: this flight goes to processing." : `${passed} of ${rows.length} checks pass. All must pass for the flight to be processed.`));
   const mark = { pass: "Pass", fail: "Fix", wait: "Pending" };
   rows.forEach(([label, state, value]) => {
-    const li = document.createElement("li");
-    li.className = state;
+    const li = Object.assign(document.createElement("li"), { className: state });
     li.append(text(Object.assign(document.createElement("span"), { className: "state" }), mark[state]),
       text(document.createElement("span"), label),
       text(Object.assign(document.createElement("span"), { className: "val" }), value));
@@ -192,147 +190,155 @@ function checklist(q, list) {
   });
 }
 
-// A site is only as good as its worst flight.
-const siteVerdict = s => {
-  const v = s.qa.filter(isFlight).map(q => q.status).sort((a, b) => RANK[a] - RANK[b]);
-  return v[0] || "Rejected";
-};
-const pill = v => `<span class="pill ${verdictClass(v)}">${v}</span>`;
-const text = (el, value) => { el.textContent = value; return el; };
-
-function summarise(sites) {
-  const flights = sites.flatMap(s => s.qa).filter(isFlight);
+function summarise(flights) {
   const count = (list, v) => list.filter(q => q.status === v).length;
   const byDay = new Map();
   flights.forEach(q => byDay.set(q.start.slice(0, 10), [...(byDay.get(q.start.slice(0, 10)) || []), q]));
-  const day = d => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
   const stat = (v, label, note) => `<div class="stat card ${v}"><b>${count(flights, v)}</b><span>${label} · ${note}</span></div>`;
   $("summary").innerHTML =
     `<div class="stats">${stat("Good", "accepted", `of ${flights.length} flights`)}${stat("Poor", "poor", "fly again with corrections")}${stat("Rejected", "rejected", "fly again")}</div>` +
-    `<p class="telenote">${flights.filter(tele).length} of ${flights.length} flights used the 70 mm telephoto camera. Use the main 28 mm camera for mapping.</p>` +
-    `<div class="days">${[...byDay].map(([d, qs]) =>
-      `<span><b>${day(d)}</b> ${count(qs, "Good")} of ${qs.length} good</span>`).join("")}</div>`;
+    `<p class="telenote">${flights.filter(tele).length} of ${flights.length} flights used the 70 mm telephoto camera. Their orthophotos come out distorted, so they are rejected.</p>` +
+    `<div class="days">${[...byDay].map(([d, qs]) => `<span><b>${day(d)}</b> ${count(qs, "Good")} of ${qs.length} good</span>`).join("")}</div>`;
 }
 
-fetch("data.json").then(r => r.json()).then(data => {
-  const days = data.sites.flatMap(s => s.qa.map(q => q.start)).sort();
-  const fmt = d => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-  text($("heading"), `Road surface Nepal flights, ${fmt(days[0])} to ${fmt(days[days.length - 1])}`);
-  const renderList = mode => {
-    const order = data.sites.map((s, i) => i);
-    if (mode === "name") order.sort((a, b) => data.sites[a].label.localeCompare(data.sites[b].label));
-    $("sites").replaceChildren();
-    order.forEach((i, k) => {
-      const site = data.sites[i];
-      const b = document.createElement("button");
-      b.dataset.i = i;
-      b.innerHTML = `<span><span class="idx">${k + 1}</span><span class="name"></span><small></small></span>${pill(siteVerdict(site))}`;
-      text(b.querySelector(".name"), site.label);
-      const real = site.qa.filter(isFlight);
-      text(b.querySelector("small"), `${real.filter(q => q.status === "Good").length} of ${real.length} flight${real.length === 1 ? "" : "s"} good`);
-      b.onclick = () => show(data, i);
-      $("sites").append(b);
-    });
-    document.querySelectorAll(".sort button").forEach(b => b.setAttribute("aria-pressed", b.dataset.sort === mode));
-    if (current !== null) markSite(current);
-  };
-  document.querySelectorAll(".sort button").forEach(b => { b.onclick = () => renderList(b.dataset.sort); });
-  renderList("date");
-  text($("sitecount"), `${data.sites.length} sites`);
-  summarise(data.sites);
-  show(data, 0);
+// A number cell, red when outside the rule limit.
+const numCol = (title, field, unit, isBad) => ({
+  title, field, hozAlign: "right", headerHozAlign: "right", sorter: "number", width: 88,
+  formatter: cell => {
+    const v = cell.getValue();
+    if (!has(v)) return "–";
+    if (isBad(v, cell.getRow().getData())) cell.getElement().classList.add("bad");
+    return `${v}${unit}`;
+  },
 });
 
-let current = null;
-const markSite = i => document.querySelectorAll("#sites button").forEach(b => b.setAttribute("aria-pressed", Number(b.dataset.i) === i));
+fetch("data.json").then(r => r.json()).then(data => {
+  const flights = data.sites.flatMap(site => site.qa.filter(isFlight).map(q => ({
+    ...q,
+    site,
+    label: site.label,
+    gimbal: has(q.pitch_deg_median) ? Math.abs(Number(q.pitch_deg_median)) : "",
+    height: has(q.height_m_max) ? Math.round(Number(q.height_m_max)) : "",
+    overlap: has(q.forward_overlap_median) ? Number(q.forward_overlap_median) : "",
+    gapcount: has(q.gaps) ? Number(q.gaps) : "",
+  })));
+  allPoints = data.points;
+  const days = flights.map(q => q.start).sort();
+  const fmt = d => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  text($("heading"), `Road surface Nepal flights, ${fmt(days[0])} to ${fmt(days[days.length - 1])}`);
+  summarise(flights);
 
-function show(data, i) {
-  const site = data.sites[i];
-  current = i;
-  markSite(i);
-  text($("title"), site.label);
+  const table = new Tabulator("#flights", {
+    data: flights,
+    index: "flight",
+    layout: "fitColumns",
+    pagination: true,
+    paginationSize: 15,
+    selectableRows: 1,
+    initialSort: [{ column: "start", dir: "asc" }],
+    columns: [
+      { title: "Flight", field: "flight", sorter: "number", width: 86,
+        formatter: cell => `${cell.getValue()}${tele(cell.getRow().getData()) ? '<span class="tele" title="70 mm telephoto camera">tele</span>' : ""}` },
+      { title: "Site", field: "label", minWidth: 130, headerFilter: "input", headerFilterPlaceholder: "Filter sites" },
+      { title: "Date", field: "start", width: 108, formatter: cell => `${day(cell.getValue())}, ${cell.getValue().slice(11, 16)}` },
+      { title: "Status", field: "status", width: 104, formatter: cell => pill(cell.getValue()),
+        headerFilter: "list", headerFilterParams: { values: ["Good", "Poor", "Rejected"], clearable: true }, headerFilterPlaceholder: "All" },
+      numCol("Gimbal", "gimbal", "°", v => v < LIMITS.gimbal),
+      numCol("Height", "height", " m", v => v > LIMITS.height),
+      { ...numCol("Overlap", "overlap", "%", v => v < LIMITS.overlap), width: 100 },
+      numCol("Gaps", "gapcount", "", (v, q) => !gapsOk(q)),
+      { title: "OAM", field: "oam", width: 76, headerSort: false,
+        formatter: cell => (cell.getValue() || []).map(o => `<a class="oambadge" href="${OAM_BROWSE(o.id)}" target="_blank" rel="noopener">OAM</a>`).join(""),
+        headerFilter: "list", headerFilterParams: { values: { yes: "On OAM", no: "Not on OAM" }, clearable: true }, headerFilterPlaceholder: "All",
+        headerFilterFunc: (want, oam) => (want === "yes") === Boolean(oam && oam.length) },
+    ],
+  });
+  table.on("rowClick", (e, row) => { if (!e.target.closest("a")) showFlight(row.getData()); });
+  table.on("tableBuilt", () => {
+    const first = flights[0];
+    table.selectRow(first.flight);
+    showFlight(first);
+  });
+});
 
-  const flights = site.qa.slice().sort((a, b) => a.start.localeCompare(b.start));
-  const num = new Map(flights.map((q, k) => [Number(q.flight), k + 1]));
-  const color = f => COLORS[(num.get(f) - 1) % COLORS.length];
-  const cell = v => (v === undefined || v === null || v === "" ? "" : v);
+let drawn = null;
+const flightColor = new Map();
 
-  const val = (v, unit) => (has(v) ? `${v}${unit}` : "–");
-  $("flights").innerHTML =
-    "<thead><tr><th>Flight</th><th class='t'>Time</th><th>Verdict</th><th class='n'>Gimbal</th>" +
-    "<th class='n' title='Maximum height above the takeoff point'>Height</th><th class='n'>Overlap</th><th class='n'>Gaps</th></tr></thead><tbody>" +
-    flights.map(q => {
-      const f = Number(q.flight);
-      const pitch = q.pitch_deg_median ? Math.abs(q.pitch_deg_median) : "";
-      const height = q.height_m_max ? Math.round(q.height_m_max) : "";
-      return `<tr data-f="${f}"><td><span class="num" style="background:${color(f)}">${num.get(f)}</span>${tele(q) ? '<span class="tele" title="70 mm telephoto camera">tele</span>' : ""}</td>` +
-        `<td class="muted t">${q.start.slice(11, 16)}</td><td>${pill(q.status)}</td>` +
-        `<td class="n ${bad(pitch !== "" && pitch < LIMITS.gimbal)}">${val(pitch, "°")}</td>` +
-        `<td class="n ${bad(height !== "" && height > LIMITS.height)}">${val(height, " m")}</td>` +
-        `<td class="n ${bad(has(q.forward_overlap_median) && Number(q.forward_overlap_median) < LIMITS.overlap)}">${val(q.forward_overlap_median, "%")}</td>` +
-        `<td class="n ${bad(has(q.gaps) && !gapsOk(q))}">${val(q.gaps, "")}</td></tr>`;
-    }).join("") + "</tbody>";
-
+// Draw every flight of a site, with its published orthophotos underneath.
+function drawSite(site) {
+  drawn = site;
   map.removeLayer(layer);
   layer = L.layerGroup().addTo(map);
-  const groups = new Map();
-  const points = data.points.filter(p => p.s === site.site);
-  flights.forEach(q => {
+  const sitePoints = allPoints.filter(p => p.s === site.site);
+  site.qa.slice().sort((a, b) => a.start.localeCompare(b.start)).forEach((q, k) => flightColor.set(Number(q.flight), COLORS[k % COLORS.length]));
+  new Set(site.qa.flatMap(q => (q.oam || []).map(o => o.id))).forEach(id =>
+    L.tileLayer(OAM_TILES(id), { pane: "oam", maxZoom: 22, attribution: '<a href="https://openaerialmap.org">OpenAerialMap</a>' }).addTo(layer));
+  drawSite.groups = new Map();
+  site.qa.forEach(q => {
     const f = Number(q.flight);
+    const color = flightColor.get(f);
     const g = L.layerGroup().addTo(layer);
-    const shots = points.filter(p => p.f === f);
+    const shots = sitePoints.filter(p => p.f === f);
     const mapping = shots.filter(p => p.k === "m");
-    if (mapping.length > 1) L.polyline(mapping.map(p => [p.la, p.lo]), { color: color(f), weight: 2, opacity: 0.6 }).addTo(g);
+    if (mapping.length > 1) L.polyline(mapping.map(p => [p.la, p.lo]), { color, weight: 2, opacity: 0.6 }).addTo(g);
     shots.forEach(p => {
       const aside = p.k !== "m";
-      L.circleMarker([p.la, p.lo], { radius: aside ? 3 : 4, color: aside ? "#9ca3af" : color(f), fillOpacity: 0.9, weight: 1 })
+      L.circleMarker([p.la, p.lo], { radius: aside ? 3 : 4, color: aside ? "#9ca3af" : color, fillOpacity: 0.9, weight: 1 })
         .bindTooltip(`${p.n} ${p.t}<br>${p.h ?? ""} m, ${p.p !== undefined ? Math.abs(p.p) : ""}°, ${p.g ?? ""} cm/px` +
           (p.ov !== undefined ? `, overlap ${p.ov}%` : "") + (aside ? "<br>set aside" : ""))
         .addTo(g);
     });
     site.gaps.filter(x => x.flight === f).forEach(x =>
-      L.polyline([x.a, x.b], { color: "#dc2626", weight: 5 }).bindTooltip(x.ties !== null && x.ties !== undefined ? `gap: ${x.ties} tie points` : `gap: ${x.ov}% overlap`).addTo(g));
+      L.polyline([x.a, x.b], { color: "#dc2626", weight: 5 }).bindTooltip(has(x.ties) ? `gap: ${x.ties} tie points` : `gap: ${x.ov}% overlap`).addTo(g));
     if (shots.length) {
       L.marker([shots[0].la, shots[0].lo], {
-        icon: L.divIcon({ html: `<span class="num" style="background:${color(f)}">${num.get(f)}</span>`, iconSize: [24, 24], iconAnchor: [12, 28] }),
+        icon: L.divIcon({ html: `<span class="num" style="background:${color}">${f}</span>`, iconSize: [24, 24], iconAnchor: [12, 28] }),
       }).addTo(g);
     }
-    groups.set(f, g);
+    drawSite.groups.set(f, g);
   });
-  map.fitBounds(L.latLngBounds(points.map(p => [p.la, p.lo])), { padding: [30, 30] });
+  if (sitePoints.length) map.fitBounds(L.latLngBounds(sitePoints.map(p => [p.la, p.lo])), { padding: [30, 30] });
+}
 
-  const select = f => {
-    groups.forEach((g, key) => g.eachLayer(l => l.setStyle?.({ opacity: key === f ? 1 : 0.15, fillOpacity: key === f ? 0.9 : 0.1 })));
-    document.querySelectorAll("#flights tbody tr").forEach(r => r.classList.toggle("on", Number(r.dataset.f) === f));
-    const q = flights.find(x => Number(x.flight) === f);
-    $("detail").hidden = false;
-    $("detail").innerHTML = `<div class="head"><span class="num" style="background:${color(f)}">${num.get(f)}</span>` +
-      `<b>Flight ${num.get(f)}</b>${pill(q.status)}<span class="meta"></span></div><p class="reason"></p>${tele(q) ? `<p class="telenote">Taken with the 70 mm telephoto camera. Use the main 28 mm camera for mapping: select it in DJI Fly before starting the waypoint flight.</p>` : ""}<ul class="checks"></ul><dl class="facts"></dl>`;
-    text($("detail").querySelector(".meta"), `${q.start.slice(0, 10)}, ${q.start.slice(11, 16)} to ${q.end.slice(11, 16)}`);
-    text($("detail").querySelector(".reason"), q.reason);
-    const facts = $("detail").querySelector(".facts");
-    const fact = (label, ...values) => {
-      const box = document.createElement("div");
-      if (typeof values[values.length - 1] === "boolean") box.classList.toggle("bad", values.pop());
-      if (label === "Folder") box.className = "wide";
-      const dd = document.createElement("dd");
-      dd.append(...values);
-      box.append(text(document.createElement("dt"), label), dd);
-      facts.append(box);
-    };
-    const chip = name => text(Object.assign(document.createElement("code"), { className: "chip" }), name);
-    q.folders.split("; ").forEach(entry => {
-      const [, name, count] = entry.match(/^(.*) \((\d+)\)$/);
-      fact("Folder", chip(name), ` ${count} photos`);
-    });
-    fact("Drone", q.drone);
-    fact("Camera", `${q.focal_35mm} mm${tele(q) ? " telephoto" : ""}`);
-    fact("Photos used", `${q.mapping} of ${q.images}`);
-    if (q.gsd_cm_median) fact("Ground resolution", `${q.gsd_cm_median} cm/px`);
-    checklist(q, $("detail").querySelector(".checks"));
+function showFlight(q) {
+  const f = Number(q.flight);
+  if (drawn !== q.site) drawSite(q.site);
+  text($("title"), `${q.label}, flight ${f}`);
+  drawSite.groups.forEach((g, key) => g.eachLayer(l => l.setStyle?.({ opacity: key === f ? 1 : 0.15, fillOpacity: key === f ? 0.9 : 0.1 })));
+  const color = flightColor.get(f);
+  const detail = $("detail");
+  detail.hidden = false;
+  detail.innerHTML = `<div class="head"><span class="num" style="background:${color}">${f}</span><b>Flight ${f}</b>${pill(q.status)}<span class="meta"></span></div>` +
+    `<p class="reason"></p>${tele(q) ? `<p class="telenote">Rejected: taken with the 70 mm telephoto camera, which gives a distorted orthophoto. Fly again with the main 28 mm camera (select it in DJI Fly before starting the waypoint flight).</p>` : ""}` +
+    `<div class="oams"></div><ul class="checks"></ul><dl class="facts"></dl>`;
+  text(detail.querySelector(".meta"), `${q.start.slice(0, 10)}, ${q.start.slice(11, 16)} to ${q.end.slice(11, 16)}`);
+  text(detail.querySelector(".reason"), q.reason);
+  (q.oam || []).forEach(o => {
+    const box = Object.assign(document.createElement("p"), { className: "oam" });
+    const link = () => Object.assign(document.createElement("a"), { href: OAM_BROWSE(o.id), target: "_blank", rel: "noopener" });
+    const thumb = link();
+    thumb.append(Object.assign(document.createElement("img"), { src: o.thumb, alt: `Orthophoto ${o.title}`, loading: "lazy" }));
+    box.append(thumb, text(link(), `Processed: ${o.title} on OpenAerialMap`));
+    detail.querySelector(".oams").append(box);
+  });
+  const facts = detail.querySelector(".facts");
+  const fact = (label, ...values) => {
+    const box = document.createElement("div");
+    if (label === "Folder") box.className = "wide";
+    const dd = document.createElement("dd");
+    dd.append(...values);
+    box.append(text(document.createElement("dt"), label), dd);
+    facts.append(box);
   };
-  document.querySelectorAll("#flights tbody tr").forEach(r => { r.onclick = () => select(Number(r.dataset.f)); });
-  if (flights.length) select(Number(flights[0].flight));
+  q.folders.split("; ").forEach(entry => {
+    const [, name, count] = entry.match(/^(.*) \((\d+)\)$/);
+    fact("Folder", text(Object.assign(document.createElement("code"), { className: "chip" }), name), ` ${count} photos`);
+  });
+  fact("Drone", q.drone);
+  fact("Camera", `${q.focal_35mm} mm${tele(q) ? " telephoto" : ""}`);
+  fact("Photos used", `${q.mapping} of ${q.images}`);
+  if (q.gsd_cm_median) fact("Ground resolution", `${q.gsd_cm_median} cm/px`);
+  checklist(q, detail.querySelector(".checks"));
 }
   </script>
 </body>
